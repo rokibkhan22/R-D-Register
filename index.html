@@ -572,8 +572,9 @@
             <div class="status-bar">
                 <div class="status-indicator">
                     <span class="status-dot" id="statusDot"></span>
-                    <span id="statusText">Syncing...</span>
+                    <span id="statusText">Ready</span>
                 </div>
+                <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="app.manualSync()">🔄 Sync</button>
                 <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="app.openSetup()">⚙️</button>
             </div>
         </div>
@@ -729,6 +730,16 @@
             editingIndex: null,
             syncInterval: null,
             isSyncing: false,
+
+            manualSync() {
+                if (!this.state.gasUrl) {
+                    this.showAlert('❌ Please configure Google Sheets first', 'error');
+                    this.openSetup();
+                    return;
+                }
+                this.showAlert('🔄 Syncing...', 'info');
+                this.autoSync();
+            },
 
             init() {
                 this.loadFromStorage();
