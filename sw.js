@@ -1,13 +1,14 @@
+
 // Service Worker for Product Documentation & Image Register PWA
 // This enables offline functionality and caching
 
 const CACHE_NAME = 'product-register-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/product-register.png',
-  '/sw.js'
+  './',
+  './index.html',
+  './manifest.json',
+  './product-register.png',
+  './sw.js'
 ];
 
 // Install event - cache essential assets
@@ -48,7 +49,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // Skip cross-origin requests
-  if (url.origin !== location.origin) {
+  if (!url.origin.includes('github.io') && !url.origin.includes('localhost')) {
+    return;
+  }
+
+  // For navigation requests, serve index.html
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('./index.html').then((response) => {
+        return response || fetch(request);
+      })
+    );
     return;
   }
 
@@ -72,8 +83,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         }).catch((error) => {
           console.warn('[Service Worker] Fetch failed:', request.url, error);
-          // Return offline page or cached fallback if available
-          return caches.match('/index.html');
+          // Return offline page
+          return caches.match('./index.html');
         });
       })
     );
@@ -86,7 +97,11 @@ self.addEventListener('fetch', (event) => {
         console.warn('[Service Worker] POST request failed:', request.url, error);
         // Return a 503 Service Unavailable response for offline POST
         return new Response(
-          JSON.stringify({ error: 'Offline - Unable to sync. Your data is saved locally.' }),
+          JSON.stringify({ 
+            success: false,
+            error: 'Offline - Unable to sync. Your data is saved locally.',
+            message: 'You are offline. Data will sync when you reconnect.'
+          }),
           {
             status: 503,
             statusText: 'Service Unavailable',
@@ -104,18 +119,5 @@ self.addEventListener('message', (event) => {
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-  }
-});
-
-// Background sync for deferred Google Sheets sync
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync event:', event.tag);
-
-  if (event.tag === 'sync-sheets') {
-    event.waitUntil(
-      // This would trigger the sync when the device comes back online
-      // Implementation depends on your app's architecture
-      Promise.resolve()
-    );
   }
 });
